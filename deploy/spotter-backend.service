@@ -1,0 +1,19 @@
+[Unit]
+Description=Spooter Django Backend
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/spotter/backend
+EnvironmentFile=/var/www/spotter/backend/.env
+ExecStart=/var/www/spotter/backend/.venv/bin/gunicorn config.wsgi \
+    --bind unix:/run/spotter/gunicorn.sock \
+    --workers 3 \
+    --access-logfile /var/log/spotter/access.log \
+    --error-logfile /var/log/spotter/error.log
+RuntimeDirectory=spotter
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
