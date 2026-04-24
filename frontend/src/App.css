@@ -1,0 +1,25 @@
+/* Only non-MUI overrides live here */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Leaflet map container */
+.map-wrap { height: 420px; width: 100%; }
+.map-wrap .leaflet-container { height: 100%; width: 100%; border-radius: 0 0 8px 8px; }
+
+@media (max-width: 599px) {
+  .map-wrap { height: 260px; }
+}
+
+/* ELD canvas */
+.eld-canvas-container { padding: 16px; overflow-x: auto; background: #fff; }
+.eld-canvas-container canvas { display: block; width: 100%; }
+
+/* Spinner used inside MUI Button */
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
