@@ -9,7 +9,7 @@ const TICK_H     = 14;   // header ruler strip
 const HEADER_H   = LABEL_H + TICK_H;   // 36
 const ROW_H      = 38;
 const ROWS       = 4;
-const REMARKS_H  = 88;
+const REMARKS_H  = 100;
 const BASE_W     = 480;  // reference width all constants are sized for
 const MIN_W      = 280;  // minimum canvas width (fits 320 px phones)
 
@@ -226,7 +226,8 @@ function draw(canvas, logData, cssW) {
     const x1   = lW + (ev.start_hour / 24) * gW;
     const x2   = lW + (ev.end_hour   / 24) * gW;
     if (x2 - x1 < 0.5) return;
-    ctx.fillStyle = STATUS_FILLS[ev.status];
+    // 34-hr restart gets a distinct purple tint so reviewers can identify it instantly
+    ctx.fillStyle = ev.type === 'restart' ? 'rgba(124, 58, 237, 0.13)' : STATUS_FILLS[ev.status];
     ctx.fillRect(x1, rowY + 1, x2 - x1, rH - 2);
   });
 
@@ -296,7 +297,6 @@ function draw(canvas, logData, cssW) {
   const CUP_H     = Math.round(rmH * 0.15);
   const cupTop    = remarksY + 2;
   const cupBottom = cupTop + CUP_H;
-  const MIN_CUP_W = Math.max(18, Math.round(28 * sc));
 
   events
     .filter(ev => ev.address && (ev.status === 'off_duty' || ev.status === 'on_duty_not_driving'))
@@ -306,12 +306,13 @@ function draw(canvas, logData, cssW) {
 
       x1 = Math.max(x1, lW + 1);
       x2 = Math.min(x2, cssW - tW - 1);
-      if (x1 >= x2) return;
-      if (x2 - x1 < MIN_CUP_W) x2 = Math.min(x1 + MIN_CUP_W, cssW - tW - 1);
+      if (x2 - x1 < 1) return;
+
+      const isRestart = ev.type === 'restart';
 
       ctx.beginPath();
-      ctx.strokeStyle = '#1e3a5f';
-      ctx.lineWidth   = 1.5;
+      ctx.strokeStyle = isRestart ? '#7c3aed' : '#1e3a5f';
+      ctx.lineWidth   = isRestart ? 2.0 : 1.5;
       ctx.moveTo(x1, cupTop);
       ctx.lineTo(x1, cupBottom);
       ctx.lineTo(x2, cupBottom);
@@ -322,7 +323,7 @@ function draw(canvas, logData, cssW) {
       ctx.save();
       ctx.translate(x1 + 2, cupBottom + 3);
       ctx.rotate(Math.PI / 4);
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = isRestart ? '#7c3aed' : '#1e293b';
       ctx.font      = `bold ${fCity}px sans-serif`;
       ctx.textAlign = 'left';
       ctx.fillText(label, 2, 2);

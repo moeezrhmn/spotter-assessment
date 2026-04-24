@@ -43,6 +43,32 @@ def geocode_address(address: str) -> dict:
     return {"lat": lat, "lon": lon, "label": label}
 
 
+def reverse_geocode(lat: float, lon: float) -> str:
+    """Convert lat/lon to 'City, ST' via ORS reverse geocoding. Returns '' on failure."""
+    try:
+        url = f"{ORS_BASE}/geocode/reverse"
+        params = {
+            "api_key": settings.ORS_API_KEY,
+            "point.lat": lat,
+            "point.lon": lon,
+            "size": 1,
+        }
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("features"):
+            props = data["features"][0]["properties"]
+            city = props.get("locality") or props.get("county") or ""
+            region = props.get("region_a") or props.get("region") or ""
+            if city and region:
+                return f"{city}, {region}"
+            label = props.get("label", "")
+            return ", ".join(label.split(",")[:2]).strip()
+    except Exception:
+        pass
+    return ""
+
+
 # ── Routing ───────────────────────────────────────────────────────────────────
 
 def get_route(origin: dict, destination: dict) -> dict:
@@ -284,8 +310,9 @@ def calculate_trip_plan(
         s = state["current_hour"]
         e = s + REST_DURATION
         p = current_pos()
-        add_event("rest", "off_duty", s, e, lat=p[0], lon=p[1])
-        add_stop("rest", s, e, p[0], p[1])
+        address = reverse_geocode(p[0], p[1])
+        add_event("rest", "off_duty", s, e, lat=p[0], lon=p[1], address=address)
+        add_stop("rest", s, e, p[0], p[1], address)
         state["current_hour"] = e
         state["shift_start"] = e
         state["driving_this_shift"] = 0.0
@@ -297,8 +324,10 @@ def calculate_trip_plan(
         s = state["current_hour"]
         e = s + RESTART_DURATION
         p = current_pos()
-        add_event("restart", "off_duty", s, e, lat=p[0], lon=p[1])
-        add_stop("restart", s, e, p[0], p[1])
+        city = reverse_geocode(p[0], p[1])
+        address = f"34-Hr Restart — {city}" if city else "34-Hr Restart"
+        add_event("restart", "off_duty", s, e, lat=p[0], lon=p[1], address=address)
+        add_stop("restart", s, e, p[0], p[1], address)
         state["current_hour"] = e
         state["shift_start"] = e
         state["driving_this_shift"] = 0.0
@@ -319,8 +348,9 @@ def calculate_trip_plan(
         s = state["current_hour"]
         e = s + FUEL_STOP_DURATION
         p = current_pos()
-        add_event("fuel", "on_duty_not_driving", s, e, lat=p[0], lon=p[1])
-        add_stop("fuel", s, e, p[0], p[1])
+        address = reverse_geocode(p[0], p[1])
+        add_event("fuel", "on_duty_not_driving", s, e, lat=p[0], lon=p[1], address=address)
+        add_stop("fuel", s, e, p[0], p[1], address)
         state["current_hour"] = e
         state["on_duty_this_shift"] += FUEL_STOP_DURATION
         state["cycle_hours"] += FUEL_STOP_DURATION
