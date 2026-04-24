@@ -1,2 +1,1 @@
 # spotter-assessment
-# spotter-assessment
